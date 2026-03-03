@@ -24,6 +24,9 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
         private readonly ObservableCollection<PauseDetailModel> _selectedUserPauses = new();
         public ReadOnlyObservableCollection<PauseDetailModel> SelectedUserPauses { get; }
 
+        private readonly ObservableCollection<string> _selectedUserAllPauseReasons = new();
+        public ReadOnlyObservableCollection<string> SelectedUserAllPauseReasons { get; }
+
         // ─── Search ───
         private string _searchText = string.Empty;
         public string SearchText
@@ -76,6 +79,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
             FilteredUsers = new ReadOnlyObservableCollection<UserSummaryRowModel>(_filteredUsers);
             SelectedWorkLogs = new ReadOnlyObservableCollection<LiveTrackingSessionModel>(_selectedWorkLogs);
             SelectedUserPauses = new ReadOnlyObservableCollection<PauseDetailModel>(_selectedUserPauses);
+            SelectedUserAllPauseReasons = new ReadOnlyObservableCollection<string>(_selectedUserAllPauseReasons);
             ApplyFilterCommand = new RelayCommand(_ => RebuildAll());
             ClearFilterCommand = new RelayCommand(_ => ClearFilter());
         }
@@ -170,6 +174,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
             {
                 _selectedWorkLogs.Clear();
                 _selectedUserPauses.Clear();
+                _selectedUserAllPauseReasons.Clear();
                 if (_selectedUser == null) return;
 
                 var userKey = _selectedUser.UserKey;
@@ -183,12 +188,34 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                 foreach (var wl in userLogs)
                     _selectedWorkLogs.Add(wl);
 
-                // Build pause details for this user
+                var seenReasons = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var reason in userLogs
+                    .SelectMany(l => l.PauseReasons ?? new List<string>())
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Select(r => r.Trim()))
+                {
+                    if (seenReasons.Add(reason))
+                    {
+                        _selectedUserAllPauseReasons.Add(reason);
+                    }
+                }
+
+                // Build pause details per pause session (keep client/work/pause-time row granularity)
                 foreach (var wl in userLogs.Where(l => l.PauseCount > 0 || l.PauseTime > 0))
                 {
+                    var pauseReasons = (wl.PauseReasons ?? new List<string>())
+                        .Where(r => !string.IsNullOrWhiteSpace(r))
+                        .Select(r => r.Trim())
+                        .ToList();
+
+                    var reasonText = !string.IsNullOrWhiteSpace(wl.LatestPauseReason) && wl.LatestPauseReason != "—"
+                        ? wl.LatestPauseReason
+                        : (pauseReasons.FirstOrDefault() ?? "—");
+
                     _selectedUserPauses.Add(new PauseDetailModel
                     {
-                        Reason = wl.LatestPauseReason ?? "—",
+                        Reason = reasonText,
+                        PauseReasons = pauseReasons,
                         ClientCode = wl.ClientCode ?? "—",
                         WorkType = wl.WorkTypeDisplay ?? "—",
                         StartTime = wl.CreatedAt,
@@ -328,7 +355,9 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                 var logs = workLogsByUser.TryGetValue(key, out var list) ? list : new List<LiveTrackingSessionModel>();
                 var totalWork = logs.Sum(l => l.TotalTimes);
                 var totalPause = logs.Sum(l => l.PauseTime);
-                var totalFiles = logs.SelectMany(l => l.Files).Count();
+                var completedFiles = logs
+                    .SelectMany(l => l.Files)
+                    .Count(f => f != null && string.Equals(f.FileStatus, "done", StringComparison.OrdinalIgnoreCase));
 
                 double idleMinutes = 0;
                 DateTime? firstLogin = null;
@@ -370,7 +399,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     TotalWorkMinutes = totalWork,
                     TotalPauseMinutes = totalPause,
                     IdleMinutes = idleMinutes,
-                    TotalFiles = totalFiles,
+                    TotalFiles = completedFiles,
                     FirstLoginAt = firstLogin,
                     LastLogoutAt = lastLogout,
                     TotalDurationTodayMinutes = totalDurationMinutes,

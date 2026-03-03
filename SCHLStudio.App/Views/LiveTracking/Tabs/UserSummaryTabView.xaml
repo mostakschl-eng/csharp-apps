@@ -255,56 +255,96 @@
                     </Grid>
                 </Border>
 
-                <!-- 3) Pause Reasons — Header row, NO border -->
+                <!-- 3) Pause Reasons — Arrow toggle with full table -->
                 <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Margin="0,0,0,12" Padding="0">
                     <StackPanel>
-                        <Grid Margin="14,12,14,10">
+                        <!-- Toggle Row: Arrow + "ALL REASONS (count)" -->
+                        <Grid Margin="14,12,14,8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="1.5*"/>
-                                <ColumnDefinition Width="1.5*"/>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="PAUSE REASON" Style="{StaticResource LiveGridHeaderTextStyle}"/>
-                            <TextBlock Grid.Column="1" Text="CLIENT" Style="{StaticResource LiveGridHeaderTextStyle}"/>
-                            <TextBlock Grid.Column="2" Text="WORK TYPE" Style="{StaticResource LiveGridHeaderTextStyle}"/>
-                            <TextBlock Grid.Column="3" Text="START TIME" Style="{StaticResource LiveGridHeaderTextStyle}"/>
-                            <TextBlock Grid.Column="4" Text="END TIME" Style="{StaticResource LiveGridHeaderTextStyle}"/>
-                            <TextBlock Grid.Column="5" Text="TOTAL PAUSE" Style="{StaticResource LiveGridHeaderTextStyle}"/>
-                            <TextBlock Grid.Column="6" Text="PAUSE COUNT" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+
+                            <ToggleButton x:Name="PauseReasonsToggle" Grid.Column="0" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Cursor="Hand">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <TextBlock x:Name="Icon" Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#999999" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="Icon" Property="Text" Value="&#xE70D;"/>
+                                                            <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                <TextBlock Text="ALL REASONS (" Style="{StaticResource LiveFileTextStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding UserSummaryTab.SelectedUserPauses.Count}" Style="{StaticResource LiveFileTextStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Text=")" Style="{StaticResource LiveFileTextStyle}" FontWeight="SemiBold"/>
+                            </StackPanel>
                         </Grid>
-                        <ItemsControl ItemsSource="{Binding UserSummaryTab.SelectedUserPauses}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Padding="14,10">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="1.5*"/>
-                                                <ColumnDefinition Width="1.5*"/>
-                                                <ColumnDefinition Width="1*"/>
-                                                <ColumnDefinition Width="1*"/>
-                                                <ColumnDefinition Width="1*"/>
-                                                <ColumnDefinition Width="1*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
-                                                <Ellipse Width="6" Height="6" Fill="#FF9500" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{Binding Reason}" Style="{StaticResource LiveFileTextStyle}" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                            <TextBlock Grid.Column="1" Text="{Binding ClientCode}" Style="{StaticResource LiveFileTextStyle}" Margin="0,0,6,0" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding WorkType}" Style="{StaticResource LiveFileTextStyle}" Margin="0,0,6,0" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Grid.Column="3" Text="{Binding StartTimeFormatted}" Style="{StaticResource LiveFileTextStyle}"/>
-                                            <TextBlock Grid.Column="4" Text="{Binding EndTimeFormatted}" Style="{StaticResource LiveFileTextStyle}"/>
-                                            <TextBlock Grid.Column="5" Text="{Binding DurationFormatted}" Style="{StaticResource LiveFileTextStyle}" Foreground="#FF9500"/>
-                                            <TextBlock Grid.Column="6" Text="{Binding PauseCount}" Style="{StaticResource LiveFileTextStyle}"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+
+                        <!-- Expanded Content: Header + Data Rows -->
+                        <StackPanel Margin="14,0,14,8" Visibility="{Binding IsChecked, ElementName=PauseReasonsToggle, Converter={StaticResource BoolToVis}}">
+                            <!-- Header Row -->
+                            <Grid Margin="0,4,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="1.5*"/>
+                                    <ColumnDefinition Width="1.5*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="PAUSE REASON" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+                                <TextBlock Grid.Column="1" Text="CLIENT" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+                                <TextBlock Grid.Column="2" Text="WORK TYPE" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+                                <TextBlock Grid.Column="3" Text="START TIME" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+                                <TextBlock Grid.Column="4" Text="END TIME" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+                                <TextBlock Grid.Column="5" Text="TOTAL PAUSE" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+                                <TextBlock Grid.Column="6" Text="PAUSE COUNT" Style="{StaticResource LiveGridHeaderTextStyle}"/>
+                            </Grid>
+
+                            <!-- Data Rows -->
+                            <ItemsControl ItemsSource="{Binding UserSummaryTab.SelectedUserPauses}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                    <Ellipse Width="6" Height="6" Fill="#FF9500" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding Reason}" Style="{StaticResource LiveFileTextStyle}" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{Binding ClientCode}" Style="{StaticResource LiveFileTextStyle}" Margin="0,0,6,0" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding WorkType}" Style="{StaticResource LiveFileTextStyle}" Margin="0,0,6,0" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding StartTimeFormatted}" Style="{StaticResource LiveFileTextStyle}"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding EndTimeFormatted}" Style="{StaticResource LiveFileTextStyle}"/>
+                                                <TextBlock Grid.Column="5" Text="{Binding DurationFormatted}" Style="{StaticResource LiveFileTextStyle}" Foreground="#FF9500"/>
+                                                <TextBlock Grid.Column="6" Text="{Binding PauseCount}" Style="{StaticResource LiveFileTextStyle}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
