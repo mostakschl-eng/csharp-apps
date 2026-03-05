@@ -223,6 +223,22 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     })
                     .OrderByDescending(g =>
                     {
+                        // Paused users always float to top
+                        var sessions = g.Sessions;
+                        bool isPaused = false;
+                        if (_latestRealtimeStatusByUser.TryGetValue(g.Username, out var liveStatus))
+                        {
+                            isPaused = IsPausedStatus(liveStatus.Status);
+                        }
+                        if (!isPaused)
+                        {
+                            isPaused = sessions.Any(s =>
+                                s.Files != null && s.Files.Any(f => IsPausedStatus(f.FileStatus)));
+                        }
+                        return isPaused ? 1 : 0;
+                    })
+                    .ThenByDescending(g =>
+                    {
                         var lastWorkLogUpdate = g.Sessions.Count > 0 ? g.Sessions.Max(x => x.UpdatedAt) : (DateTime?)null;
                         if (_latestSessionsByUser.TryGetValue(g.Username, out var ss))
                         {

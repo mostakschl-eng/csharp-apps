@@ -35,7 +35,7 @@ namespace SCHLStudio.App.ViewModels.ExplorerV2
             OpenWithCommand = new RelayCommand(_ =>
             {
                 OpenWithActionOverride?.Invoke();
-            });
+            }, _ => IsStarted);
             SkipCommand = new RelayCommand(_ =>
             {
                 SkipActionOverride?.Invoke();
@@ -71,6 +71,7 @@ namespace SCHLStudio.App.ViewModels.ExplorerV2
                 if (SetProperty(ref _isStarted, value))
                 {
                     StartCommand.RaiseCanExecuteChanged();
+                    OpenWithCommand.RaiseCanExecuteChanged();
                     BreakCommand.RaiseCanExecuteChanged();
                 }
             }

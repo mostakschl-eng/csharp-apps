@@ -166,11 +166,16 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     }
                 }
 
-                // Re-select
-                if (SelectedUser != null && !_filteredUsers.Contains(SelectedUser) && _filteredUsers.Count > 0)
-                    SelectedUser = _filteredUsers[0];
-                else if (_filteredUsers.Count > 0 && SelectedUser == null)
-                    SelectedUser = _filteredUsers[0];
+                // During RebuildAll, skip re-selection here — RebuildAll handles
+                // it after _isRebuilding is set back to false, ensuring
+                // UpdateSelectedDetails() actually runs.
+                if (!_isRebuilding)
+                {
+                    if (SelectedUser != null && !_filteredUsers.Contains(SelectedUser) && _filteredUsers.Count > 0)
+                        SelectedUser = _filteredUsers[0];
+                    else if (_filteredUsers.Count > 0 && SelectedUser == null)
+                        SelectedUser = _filteredUsers[0];
+                }
             }
             catch (Exception ex)
             {

@@ -99,9 +99,9 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
             {
                 if (IsWorkingFile && StartTime.HasValue)
                 {
-                    var startUtc = StartTime.Value.Kind == DateTimeKind.Utc
-                        ? StartTime.Value
-                        : StartTime.Value.ToUniversalTime();
+                    // Backend stores UTC; JSON may deserialize without Kind=Utc
+                    // when the timestamp string lacks a 'Z' suffix.  Always treat as UTC.
+                    var startUtc = DateTime.SpecifyKind(StartTime.Value, DateTimeKind.Utc);
                     var elapsed = (DateTime.UtcNow - startUtc).TotalMinutes;
                     return elapsed > 0 ? Math.Max(TimeSpent, elapsed) : TimeSpent;
                 }
@@ -249,7 +249,33 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
         }
 
         private double _estimateTime;
-        public double EstimateTime { get => _estimateTime; set => SetProperty(ref _estimateTime, value); }
+        public double EstimateTime
+        {
+            get => _estimateTime;
+            set
+            {
+                if (SetProperty(ref _estimateTime, value))
+                    OnPropertyChanged(nameof(IsOverEstimate));
+            }
+        }
+
+        /// <summary>True when avg time per file exceeds the client ET.</summary>
+        public bool IsOverEstimate
+        {
+            get
+            {
+                if (EstimateTime <= 0 || Files == null || Files.Count == 0) return false;
+                int counted = 0;
+                foreach (var f in Files)
+                {
+                    var s = (f.FileStatus ?? "").Trim();
+                    if (string.Equals(s, "done", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(s, "walkout", StringComparison.OrdinalIgnoreCase))
+                        counted++;
+                }
+                return counted > 0 && (ComputedTotalTimes / counted) > EstimateTime;
+            }
+        }
 
         private double _totalTimes;
         public double TotalTimes
@@ -261,6 +287,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
                 {
                     OnPropertyChanged(nameof(TotalTimesFormatted));
                     OnPropertyChanged(nameof(AvgTimePerFile));
+                    OnPropertyChanged(nameof(IsOverEstimate));
                 }
             }
         }
@@ -307,6 +334,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
                 {
                     OnPropertyChanged(nameof(Progress));
                     OnPropertyChanged(nameof(AvgTimePerFile));
+                    OnPropertyChanged(nameof(IsOverEstimate));
                     OnPropertyChanged(nameof(CurrentFileName));
                 }
             }
@@ -316,6 +344,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
         {
             OnPropertyChanged(nameof(Progress));
             OnPropertyChanged(nameof(AvgTimePerFile));
+            OnPropertyChanged(nameof(IsOverEstimate));
             OnPropertyChanged(nameof(CurrentFileName));
             OnPropertyChanged(nameof(IsActive));
         }
@@ -366,7 +395,16 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
             get
             {
                 if (Files == null || Files.Count == 0) return "—";
-                return LiveTrackingFileModel.FormatMinutes(ComputedTotalTimes / Files.Count);
+                int counted = 0;
+                foreach (var f in Files)
+                {
+                    var s = (f.FileStatus ?? "").Trim();
+                    if (string.Equals(s, "done", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(s, "walkout", StringComparison.OrdinalIgnoreCase))
+                        counted++;
+                }
+                if (counted == 0) return "—";
+                return LiveTrackingFileModel.FormatMinutes(ComputedTotalTimes / counted);
             }
         }
 
@@ -434,6 +472,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
 
                 OnPropertyChanged(nameof(TotalTimesFormatted));
                 OnPropertyChanged(nameof(AvgTimePerFile));
+                OnPropertyChanged(nameof(IsOverEstimate));
                 OnPropertyChanged(nameof(CurrentFileName));
                 OnPropertyChanged(nameof(IsActive));
             }

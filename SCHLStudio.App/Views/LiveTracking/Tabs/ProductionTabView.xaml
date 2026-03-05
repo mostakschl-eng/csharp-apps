@@ -165,7 +165,18 @@
                             <TextBlock Grid.Column="5" Text="{Binding CategoriesDisplay}" ToolTip="{Binding Categories}" Style="{StaticResource LiveRowTextStyle}" Margin="6,0,10,0" TextTrimming="CharacterEllipsis"/>
                             <TextBlock Grid.Column="6" Text="{Binding Progress}" Style="{StaticResource LiveRowTextStyle}" TextAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}"/>
                             <TextBlock Grid.Column="7" Text="{Binding TotalTimesFormatted}" Style="{StaticResource LiveRowTextStyle}" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="8" Text="{Binding AvgTimePerFile}" Style="{StaticResource LiveRowTextStyle}" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="8" Text="{Binding AvgTimePerFile}" TextAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource LiveRowTextStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOverEstimate}" Value="True">
+                                                <Setter Property="Foreground" Value="#E53935"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <TextBlock Grid.Column="9" Text="{Binding EndTimeFormatted}" Style="{StaticResource LiveRowTextStyle}" TextAlignment="Center"/>
                         </Grid>
 

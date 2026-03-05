@@ -502,6 +502,20 @@ namespace SCHLStudio.App
                             }
                         }
 
+                        // Close session so backend marks logout_at (handles Windows shutdown, Alt+F4, Task Manager kill)
+                        try
+                        {
+                            var sid = AppConfig.CurrentTrackerSessionId;
+                            if (!string.IsNullOrWhiteSpace(sid))
+                            {
+                                apiClient.LogoutAsync(sid).Wait(TimeSpan.FromSeconds(3));
+                            }
+                        }
+                        catch
+                        {
+                            // Best-effort — if network is already dead, we can't do anything
+                        }
+
                         apiClient.Stop();
                     }
                 }

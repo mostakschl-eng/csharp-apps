@@ -55,7 +55,7 @@
                         <TextBlock Text="WORKING NOW" Style="{StaticResource LiveCardLabelStyle}" />
                         <TextBlock Text="{Binding PauseTab.TotalWorkingUsers}" Style="{StaticResource LiveCardValueStyle}" />
                     </StackPanel>
-                    <TextBlock Grid.Column="1" Text="&#xE8EF;" Style="{StaticResource LiveCardIconStyle}" Foreground="#34C759" FontSize="24" Opacity="0.7" Margin="8,0,0,0"/>
+                    <TextBlock Grid.Column="1" Text="&#xE77B;" Style="{StaticResource LiveCardIconStyle}" Foreground="#34C759" FontSize="24" Opacity="0.7" Margin="8,0,0,0"/>
                 </Grid>
             </Border>
 

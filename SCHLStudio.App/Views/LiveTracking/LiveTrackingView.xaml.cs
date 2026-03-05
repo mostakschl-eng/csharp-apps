@@ -27,18 +27,17 @@ namespace SCHLStudio.App.Views.LiveTracking
             if (!IsLiveTrackingAllowed())
                 return;
 
-            // Fire and forget so we don't freeze the UI while navigating to this tab
-            _ = Task.Run(() =>
+            // StartTracking() modifies ObservableCollections and a DispatcherTimer,
+            // both of which require the UI dispatcher thread. LoadDataAsync inside
+            // it uses await so the UI stays responsive during the HTTP call.
+            try
             {
-                try
-                {
-                    _viewModel?.StartTracking();
-                }
-                catch
-                {
-                    // Ignore background tracking errors
-                }
-            });
+                _viewModel?.StartTracking();
+            }
+            catch
+            {
+                // Ignore background tracking errors
+            }
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)

@@ -235,6 +235,15 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
             AvailableUsers = new ReadOnlyObservableCollection<string>(_availableUsers);
             AvailableShifts = new ReadOnlyObservableCollection<string>(_availableShifts);
 
+            // Pre-populate with defaults so the ComboBoxes show text immediately
+            // (before LoadDataAsync finishes fetching from server).
+            _availableClients.Add("All Clients");
+            _availableUsers.Add("All Users");
+            _availableShifts.Add("All Shifts");
+            _availableShifts.Add("Morning");
+            _availableShifts.Add("Evening");
+            _availableShifts.Add("Night");
+
             // Default to "All Shifts" so active sessions never disappear due to auto-detected shift
             // boundaries (e.g., 3PM switching morning -> evening).
             _selectedShift = "All Shifts";

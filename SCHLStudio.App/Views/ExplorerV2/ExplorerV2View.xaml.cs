@@ -301,6 +301,7 @@ namespace SCHLStudio.App.Views.ExplorerV2
         {
             var normalized = (workType ?? string.Empty).Trim();
             return string.Equals(normalized, "Production", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, "Additional", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(normalized, "Shared", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(normalized, "Tranning", StringComparison.OrdinalIgnoreCase);
         }
@@ -320,6 +321,11 @@ namespace SCHLStudio.App.Views.ExplorerV2
             if (!filtered.Any(x => string.Equals(x, "Production", StringComparison.OrdinalIgnoreCase)))
             {
                 filtered.Insert(0, "Production");
+            }
+
+            if (!filtered.Any(x => string.Equals(x, "Additional", StringComparison.OrdinalIgnoreCase)))
+            {
+                filtered.Add("Additional");
             }
 
             if (!filtered.Any(x => string.Equals(x, "Shared", StringComparison.OrdinalIgnoreCase)))
