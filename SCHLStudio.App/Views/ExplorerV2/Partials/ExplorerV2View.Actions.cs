@@ -290,11 +290,28 @@ namespace SCHLStudio.App.Views.ExplorerV2
                 try
                 {
                     var wt = GetCurrentWorkTypeInfo();
+                    var effectiveWorkType = wt.Name;
+                    try
+                    {
+                        if (_vm.HasSelectionMetaLock)
+                        {
+                            var locked = (_vm.SelectionLockedWorkType ?? string.Empty).Trim();
+                            if (!string.IsNullOrWhiteSpace(locked))
+                            {
+                                effectiveWorkType = locked;
+                            }
+                        }
+                    }
+                    catch (Exception ex_safe)
+                    {
+                        LogSuppressedError("ExecuteFinishWorkflowFromVmAsync_EffectiveWorkType", ex_safe);
+                    }
+
                     var baseDir = GetActiveJobFolderPath();
 
                     await MoveSelectedToDoneAndRefreshAsync(
                         baseDir,
-                        filePaths => _doneMoveService.MoveToDone(filePaths, wt.Name));
+                        filePaths => _doneMoveService.MoveToDone(filePaths, effectiveWorkType));
                 }
                 catch (Exception qcEx)
                 {
@@ -303,8 +320,6 @@ namespace SCHLStudio.App.Views.ExplorerV2
 
                 try
                 {
-                    var wt2 = GetCurrentWorkTypeInfo();
-
                     var activeSnapshot = GetTrackerTargetFullPaths();
                     _workflowService.DispatchFinishTrackerSync(
                         getWorkTimerElapsedSeconds: GetWorkTimerElapsedSeconds,

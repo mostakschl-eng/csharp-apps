@@ -201,6 +201,7 @@ namespace SCHLStudio.App.Views.Windows
                 try
                 {
                     AppConfig.SetCurrentAppUser(null);
+                    AppConfig.SetCurrentDisplayName(null);
                     AppConfig.SetCurrentTrackerSession(null, null);
                 }
                 catch

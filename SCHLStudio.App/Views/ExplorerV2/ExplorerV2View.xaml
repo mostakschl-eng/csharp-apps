@@ -515,12 +515,19 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0"
-                               Text="Files"
+                        <StackPanel Grid.Row="0"
+                            Orientation="Horizontal"
+                            Margin="0,0,0,10">
+                        <TextBlock Text="Files"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextMainBrush}"
-                               Margin="0,0,0,10" />
+                               Foreground="{DynamicResource TextMainBrush}" />
+                        <TextBlock Text="{Binding FileTiles.Count}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="8,1,0,0" />
+                        </StackPanel>
 
                     <ListView x:Name="FilesListView"
                               Grid.Row="1"
@@ -653,6 +660,8 @@
                                         CornerRadius="{StaticResource RadiusLg}"
                                         BorderBrush="{DynamicResource DividerBrush}"
                                         BorderThickness="1"
+                                    ToolTip="{Binding FileName}"
+                                    ToolTipService.InitialShowDelay="0"
                                         Margin="0,0,12,12">
                                     <TextBlock Text="{Binding Extension}"
                                                HorizontalAlignment="Center"

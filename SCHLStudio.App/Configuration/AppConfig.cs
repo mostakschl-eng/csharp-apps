@@ -132,9 +132,21 @@ namespace SCHLStudio.App.Configuration
             {
                 try
                 {
-                    return string.Equals(CurrentAppUser, "UnknownUser", StringComparison.OrdinalIgnoreCase)
-                        ? "_global"
-                        : CurrentAppUser;
+                    var display = EnsureDirectorySafe(_currentDisplayName);
+                    if (!string.IsNullOrWhiteSpace(display)
+                        && !string.Equals(display, "UnknownUser", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return display;
+                    }
+
+                    var user = EnsureDirectorySafe(_currentAppUser);
+                    if (!string.IsNullOrWhiteSpace(user)
+                        && !string.Equals(user, "UnknownUser", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return user;
+                    }
+
+                    return "_global";
                 }
                 catch
                 {

@@ -390,6 +390,90 @@ namespace SCHLStudio.App.Views.ExplorerV2
             }
         }
 
+        private string GetEffectiveWorkTypeForTracker()
+        {
+            try
+            {
+                if (_vm.HasSelectionMetaLock)
+                {
+                    var locked = (_vm.SelectionLockedWorkType ?? string.Empty).Trim();
+                    if (!string.IsNullOrWhiteSpace(locked))
+                    {
+                        return locked;
+                    }
+                }
+
+                return GetCurrentWorkTypeInfo().Name ?? string.Empty;
+            }
+            catch
+            {
+                return GetCurrentWorkTypeInfo().Name ?? string.Empty;
+            }
+        }
+
+        private string GetEffectiveClientCodeForTracker()
+        {
+            try
+            {
+                if (_vm.HasSelectionMetaLock)
+                {
+                    var locked = (_vm.SelectionLockedClientCode ?? string.Empty).Trim();
+                    if (!string.IsNullOrWhiteSpace(locked))
+                    {
+                        return locked;
+                    }
+                }
+
+                return _vm.ActiveJobClientCode ?? string.Empty;
+            }
+            catch
+            {
+                return _vm.ActiveJobClientCode ?? string.Empty;
+            }
+        }
+
+        private int? GetEffectiveETForTracker()
+        {
+            try
+            {
+                if (_vm.HasSelectionMetaLock && _vm.SelectionLockedEt is not null)
+                {
+                    return _vm.SelectionLockedEt;
+                }
+
+                return GetCurrentET();
+            }
+            catch
+            {
+                return GetCurrentET();
+            }
+        }
+
+        private string GetEffectiveCategoriesForTracker()
+        {
+            try
+            {
+                if (_vm.HasSelectionMetaLock)
+                {
+                    var lockedTasks = _vm.SelectionLockedTasks
+                        .Select(x => (x ?? string.Empty).Trim())
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToList();
+
+                    if (lockedTasks.Count > 0)
+                    {
+                        return string.Join(", ", lockedTasks);
+                    }
+                }
+
+                return GetSelectedCategories();
+            }
+            catch
+            {
+                return GetSelectedCategories();
+            }
+        }
+
         private List<PauseReasonDto>? BuildPauseReasons()
         {
             try
@@ -429,9 +513,9 @@ namespace SCHLStudio.App.Views.ExplorerV2
             {
                 if (_trackerSync is null || filePaths.Count == 0) return;
 
-                var workType = GetCurrentWorkTypeInfo().Name ?? string.Empty;
-                var categories = GetSelectedCategories();
-                var estimateTime = GetCurrentET();
+                var workType = GetEffectiveWorkTypeForTracker();
+                var categories = GetEffectiveCategoriesForTracker();
+                var estimateTime = GetEffectiveETForTracker();
 
                 var validFiles = filePaths
                     .Select(fp => (fp ?? string.Empty).Trim())
@@ -444,7 +528,7 @@ namespace SCHLStudio.App.Views.ExplorerV2
                         employeeName: Configuration.AppConfig.CurrentDisplayName,
                         workType: workType,
                         shift: ShiftDetector.GetCurrentShift(),
-                        clientCode: _vm.ActiveJobClientCode ?? string.Empty,
+                        clientCode: GetEffectiveClientCodeForTracker(),
                         folderPath: GetActiveJobFolderPath(),
                         estimateTime: estimateTime,
                         categories: categories,
@@ -526,7 +610,7 @@ namespace SCHLStudio.App.Views.ExplorerV2
                 // still receive time (e.g., 60s across 73 files => 60 files get +1, 13 get +0).
                 var basePerFile = active.Count > 0 ? delta / active.Count : delta;
                 var remainder = active.Count > 0 ? delta % active.Count : 0;
-                var workType = GetCurrentWorkTypeInfo().Name ?? string.Empty;
+                var workType = GetEffectiveWorkTypeForTracker();
 
                 var validFiles = active
                     .Select(fp => (fp ?? string.Empty).Trim())
@@ -541,10 +625,10 @@ namespace SCHLStudio.App.Views.ExplorerV2
                         EmployeeName = (Configuration.AppConfig.CurrentDisplayName ?? string.Empty).ToLowerInvariant(),
                         WorkType = (workType ?? string.Empty).ToLowerInvariant(),
                         Shift = ShiftDetector.GetCurrentShift(),
-                        ClientCode = _vm.ActiveJobClientCode ?? string.Empty,
+                        ClientCode = GetEffectiveClientCodeForTracker(),
                         FolderPath = GetActiveJobFolderPath(),
-                        EstimateTime = GetCurrentET(),
-                        Categories = GetSelectedCategories(),
+                        EstimateTime = GetEffectiveETForTracker(),
+                        Categories = GetEffectiveCategoriesForTracker(),
                         TotalTimes = delta,
                         FileStatus = "working",
                         PauseCount = _workSession.PauseCount,
@@ -583,7 +667,7 @@ namespace SCHLStudio.App.Views.ExplorerV2
                     return;
                 }
 
-                var workType = GetCurrentWorkTypeInfo().Name ?? string.Empty;
+                var workType = GetEffectiveWorkTypeForTracker();
 
                 var validFiles = filePaths
                     .Select(fp => (fp ?? string.Empty).Trim())
@@ -599,10 +683,10 @@ namespace SCHLStudio.App.Views.ExplorerV2
                     employeeName: Configuration.AppConfig.CurrentDisplayName,
                     workType: workType,
                     shift: ShiftDetector.GetCurrentShift(),
-                    clientCode: _vm.ActiveJobClientCode ?? string.Empty,
+                    clientCode: GetEffectiveClientCodeForTracker(),
                     folderPath: GetActiveJobFolderPath(),
-                    estimateTime: GetCurrentET(),
-                    categories: GetSelectedCategories(),
+                    estimateTime: GetEffectiveETForTracker(),
+                    categories: GetEffectiveCategoriesForTracker(),
                     totalTimes: 0,
                     pauseCount: _workSession.PauseCount,
                     pauseTime: (int)_workSession.TotalPauseTimeSeconds,

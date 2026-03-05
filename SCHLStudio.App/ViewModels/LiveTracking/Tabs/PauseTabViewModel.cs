@@ -384,29 +384,68 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
 
                     foreach (var s in userSessions.Where(s => s.PauseCount > 0).OrderByDescending(s => s.UpdatedAt))
                     {
-                        string reasonStr = s.LatestPauseReason;
-                        if (string.IsNullOrWhiteSpace(reasonStr) || reasonStr == "—")
-                        {
-                            var validReasons = s.PauseReasons.Where(r => !string.IsNullOrWhiteSpace(r)).ToList();
-                            reasonStr = validReasons.Any() ? string.Join(", ", validReasons.Distinct()) : "Unknown";
-                        }
-                        
                         // Collect reasons for summary cards
-                        foreach(var pr in s.PauseReasons.Where(r => !string.IsNullOrWhiteSpace(r)))
+                        foreach (var pr in s.PauseReasons.Where(r => !string.IsNullOrWhiteSpace(r)))
                         {
                             allReasons.Add(pr);
                         }
 
-                        userGroup.Pauses.Add(new PauseDetailModel 
-                        { 
-                            Reason = reasonStr,
-                            ClientCode = string.IsNullOrWhiteSpace(s.ClientCode) ? "—" : s.ClientCode,
-                            WorkType = string.IsNullOrWhiteSpace(s.WorkType) ? "—" : s.WorkType,
-                            StartTime = s.CreatedAt,
-                            EndTime = s.UpdatedAt,
-                            Duration = s.PauseTime,
-                            PauseCount = s.PauseCount
-                        });
+                        if (s.PauseReasonDetails != null && s.PauseReasonDetails.Count > 0)
+                        {
+                            foreach (var detail in s.PauseReasonDetails.OrderByDescending(d => d.StartTime ?? DateTime.MinValue))
+                            {
+                                userGroup.Pauses.Add(new PauseDetailModel
+                                {
+                                    Reason = string.IsNullOrWhiteSpace(detail.Reason) ? "Unknown" : detail.Reason,
+                                    ClientCode = string.IsNullOrWhiteSpace(detail.ClientCode) ? "—" : detail.ClientCode,
+                                    WorkType = string.IsNullOrWhiteSpace(detail.WorkType) ? "—" : detail.WorkType,
+                                    StartTime = detail.StartTime ?? s.CreatedAt,
+                                    EndTime = detail.EndTime ?? s.UpdatedAt,
+                                    Duration = detail.Duration,
+                                    PauseCount = detail.PauseCount > 0 ? detail.PauseCount : 1
+                                });
+                            }
+                        }
+                        else
+                        {
+                            // Fallback if no detailed reasons available
+                            var validReasons = s.PauseReasons.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct().ToList();
+
+                            if (validReasons.Count > 0)
+                            {
+                                // We don't have individual times, so we distribute the count / duration
+                                // purely for display purposes, or just show the session totals on each row.
+                                // Showing the session totals on each row matches the previous behavior, 
+                                // but now visually split by reason.
+                                foreach (var reason in validReasons)
+                                {
+                                    userGroup.Pauses.Add(new PauseDetailModel
+                                    {
+                                        Reason = reason,
+                                        ClientCode = string.IsNullOrWhiteSpace(s.ClientCode) ? "—" : s.ClientCode,
+                                        WorkType = string.IsNullOrWhiteSpace(s.WorkType) ? "—" : s.WorkType,
+                                        StartTime = s.CreatedAt,
+                                        EndTime = s.UpdatedAt,
+                                        Duration = s.PauseTime,
+                                        PauseCount = s.PauseCount
+                                    });
+                                }
+                            }
+                            else
+                            {
+                                // Edge case where PauseCount > 0, but string list is totally empty
+                                userGroup.Pauses.Add(new PauseDetailModel
+                                {
+                                    Reason = "Unknown",
+                                    ClientCode = string.IsNullOrWhiteSpace(s.ClientCode) ? "—" : s.ClientCode,
+                                    WorkType = string.IsNullOrWhiteSpace(s.WorkType) ? "—" : s.WorkType,
+                                    StartTime = s.CreatedAt,
+                                    EndTime = s.UpdatedAt,
+                                    Duration = s.PauseTime,
+                                    PauseCount = s.PauseCount
+                                });
+                            }
+                        }
                     }
 
                     newGroups.Add(userGroup);
