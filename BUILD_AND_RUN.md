@@ -409,3 +409,75 @@ Preserving previous data when snapshot returns 0 results — protects against fl
 Restoring filter selections after reload — good UX detail
 MergeWorkLogs comparing UpdatedAt before replacing — solid
 
+plan -
+
+
+Clean Implementation Plan: Working Files Resumption
+This plan outlines the exact changes needed to allow the C# app to resume "working" files across sessions seamlessly. It covers adding the specific file_path property to the backend schema and the time-calculation logic to recover lost time.
+
+1. Backend Changes (NestJS)
+A. Add file_path to Database Schema
+The C# app needs to know exactly where individual files are located (e.g., if files came from different sub-folders inside the main job folder).
+
+File: 
+schl-web/packages/common/src/models/qc-work-log.schema.ts
+Action: Add a file_path property string to the @Schema() export class QcWorkLogFile object.
+Action: Ensure the SyncQcWorkLogDto (the incoming request model) also accepts file_path so the C# app can send it.
+B. Disable the "Force Walkout" Auto-Cancel
+Currently, if a user logs in or out, the backend finds their old "working" files and forcefully changes them to "walkout". This prevents resumption.
+
+File: 
+schl-web/apps/schl-api/src/modules/tracker/tracker.auth.service.ts
+Action: In 
+login()
+, remove or disable the updateMany command that sets stuck working files to walkout.
+Action: In 
+logout()
+, remove the similar updateMany command. Keep the files as "working".
+C. Create an "Active Session" API Endpoint
+When the C# app starts up, it needs an endpoint to ask: "Does this user have any working files right now?"
+
+File: 
+tracker.controller.ts
+ & 
+tracker.qc-work-log.service.ts
+Action: Add a GET /tracker/active-work-log endpoint.
+Action: It queries qc_work_logs for today's date and the current user's name where files.file_status == 'working'.
+Payload: It will return the job's Metadata (client_code, folder_path, shift, work_type), and an array of the exact files including their file_name, file_status, started_at, and time_spent.
+2. Frontend Changes (C# WPF App)
+A. Update Sync Logic to include file_path
+When the employee starts a file, the C# app must send not just the file name, but its path.
+
+File: SCHLStudio.App/Services/Api/Tracker/SyncWorkLogDto.cs
+Action: Add 
+FilePath
+ to the SyncWorkLogFileDto. Ensure ExplorerV2ViewModel populates this when making the sync call.
+B. Fetch Active Session on Login
+Immediately after a successful login, the app must check if there is unfinished work.
+
+File: SCHLStudio.App/ViewModels/ExplorerV2/ExplorerV2ViewModel.cs (or the authentication handler).
+Action: Call GET /tracker/active-work-log.
+If data is returned, transition the UI into "Locked Working Mode".
+C. Lock the UI and Reload Metadata
+Action: Navigate the Explorer TreeView to the exact folder_path returned by the server.
+Action: Fill out the metadata fields (client_code, work_type, shift) using the server data.
+Action: Select the exact files in the grid that match the file_name and file_path array returned from the server.
+Action: Lock the Explorer tree and inputs. The user cannot select a new folder or change metadata. They are locked into this active job.
+D. Time Calculation Logic (Clock-Based Resumption)
+Because we are relying on clock time, we don't just rely on the database's time_spent integer (which might be stale). Instead, we calculate missing time using the started_at timestamp.
+
+Action: For each working file, take the server's started_at UTC timestamp.
+Calculation: Current UI Time = (Current UTC Time - started_at) + previously saved time_spent.
+Example scenario: The database says you started at 10:00 AM. Your PC crashed. You open the app at 10:15 AM.
+10:15 AM - 10:00 AM = 15 minutes.
+The UI timer instantly displays 15:00 minutes and starts counting up from there.
+Action: The C# "Pulse" timer loop (which usually ticks up by 1 second) continues syncing this newly calculated master time down to the server.
+3. Review and Next Steps
+This plan covers your exact requirements:
+
+Adding file_path so we know the exact source of every individual file lock.
+Checking for old jobs upon login.
+Loading metadata and locking the UI to that specific job.
+Correctly calculating the lost time using started_at and Current Time.
+If you are satisfied with this architecture, we can begin implementing it layer by layer, starting with the NestJS schema changes.
+
