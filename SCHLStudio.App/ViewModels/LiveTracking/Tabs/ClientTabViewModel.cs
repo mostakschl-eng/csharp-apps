@@ -58,6 +58,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                 TotalEmployees = activeSessions.Select(s => s.EmployeeName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().Count();
 
                 FilesCompleted = allSessions
+                    .Where(s => !IsQcWorkType(s.WorkType))
                     .SelectMany(s => s.Files.Select(f => new
                     {
                         Folder = (s.FolderPath ?? string.Empty).Trim().ToLowerInvariant(),
@@ -69,14 +70,28 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     .Distinct()
                     .Count();
 
-                TotalTimeSpent = LiveTrackingFileModel.FormatMinutes(allSessions.Sum(s => s.ComputedTotalTimes));
-
                 var grouped = allSessions
                     .Where(s => !string.IsNullOrWhiteSpace(s.ClientCode))
                     .GroupBy(s => s.ClientCode.Trim().ToUpperInvariant())
                     .Select(g =>
                     {
                         var activeCount = g.Count(s => s.IsActive);
+                        var startDt = g.Where(s => s.CreatedAt != default).Select(s => s.CreatedAt).DefaultIfEmpty(default).Min();
+                        var endDt = g.Where(s => s.UpdatedAt != default).Select(s => s.UpdatedAt).DefaultIfEmpty(default).Max();
+                        
+                        var startUtc = startDt != default ? DateTime.SpecifyKind(startDt, DateTimeKind.Utc) : default;
+                        var endUtc = activeCount > 0 ? DateTime.UtcNow : (endDt != default ? DateTime.SpecifyKind(endDt, DateTimeKind.Utc) : default);
+
+                        double totalTimeSpent = 0;
+                        if (startUtc != default && endUtc != default && endUtc > startUtc)
+                        {
+                            totalTimeSpent = (endUtc - startUtc).TotalMinutes;
+                        }
+                        else
+                        {
+                            totalTimeSpent = g.Sum(s => s.ComputedTotalTimes);
+                        }
+
                         return new ClientTabRowModel
                         {
                             ClientName = g.First().ClientCode,
@@ -96,7 +111,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                                 .Distinct()
                                 .Count(),
                             TotalQcFilesDone = g
-                                .Where(s => IsQcWorkType(s.WorkType))
+                                .Where(s => string.Equals((s.WorkType ?? string.Empty).Trim(), "qc1", StringComparison.OrdinalIgnoreCase))
                                 .SelectMany(s => s.Files.Select(f => new
                                 {
                                     Folder = (s.FolderPath ?? string.Empty).Trim().ToLowerInvariant(),
@@ -107,23 +122,31 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                                 .Select(x => $"{x.Folder}\\{x.File}")
                                 .Distinct()
                                 .Count(),
-                            EstimateTime = g
-                                .GroupBy(s => new
-                                {
-                                    Folder = (s.FolderPath ?? string.Empty).Trim().ToLowerInvariant(),
-                                    WorkType = (s.WorkType ?? string.Empty).Trim().ToLowerInvariant(),
-                                    Category = (s.Categories ?? string.Empty).Trim().ToLowerInvariant(),
-                                })
-                                .Select(jobGroup => jobGroup.Max(x => x.EstimateTime))
-                                .Sum(),
-                            TotalTimeSpent = g.Sum(s => s.ComputedTotalTimes),
-                            StartTime = g.Min(s => s.CreatedAt),
-                            EndTime = g.Max(s => s.UpdatedAt),
+                            EstimateTime = g.Max(x => x.EstimateTime),
+                            TotalTimeSpent = totalTimeSpent,
+                            StartTime = startUtc,
+                            EndTime = endUtc,
                         };
                     })
                     .OrderByDescending(g => g.IsActive)
                     .ThenByDescending(g => g.EndTime)
                     .ToList();
+
+                if (activeSessions.Count > 0)
+                {
+                    var firstStart = activeSessions
+                        .Where(s => s.CreatedAt != default)
+                        .Select(s => s.CreatedAt)
+                        .DefaultIfEmpty(DateTime.UtcNow)
+                        .Min();
+
+                    var startUtc = DateTime.SpecifyKind(firstStart, DateTimeKind.Utc);
+                    TotalTimeSpent = LiveTrackingFileModel.FormatMinutes(Math.Max(0, (DateTime.UtcNow - startUtc).TotalMinutes));
+                }
+                else
+                {
+                    TotalTimeSpent = "0m";
+                }
 
                 var workingIncoming = grouped.Where(g => g.IsActive).ToList();
                 var inactiveIncoming = grouped.Where(g => !g.IsActive).ToList();

@@ -30,18 +30,18 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
             private set => SetProperty(ref _totalWorkingUsers, value);
         }
 
-        private string _totalPauseTime = "0m";
-        public string TotalPauseTimeFormatted
+        private int _totalPauseCount;
+        public int TotalPauseCount
         {
-            get => _totalPauseTime;
-            private set => SetProperty(ref _totalPauseTime, value);
+            get => _totalPauseCount;
+            private set => SetProperty(ref _totalPauseCount, value);
         }
 
-        private string _totalWorkingTime = "0m";
-        public string TotalWorkingTimeFormatted
+        private string _totalAvgWorkingTime = "0m";
+        public string TotalAvgWorkingTimeFormatted
         {
-            get => _totalWorkingTime;
-            private set => SetProperty(ref _totalWorkingTime, value);
+            get => _totalAvgWorkingTime;
+            private set => SetProperty(ref _totalAvgWorkingTime, value);
         }
 
         private string _avgPauseTime = "0m";
@@ -253,6 +253,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                 var allReasons = new List<string>();
                 double grandTotalPauseTime = 0;
                 double grandTotalWorkingTime = 0;
+                int grandTotalPauseCount = 0;
 
                 foreach (var group in grouped)
                 {
@@ -263,6 +264,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     int totalPauseCount = userSessions.Sum(s => s.PauseCount);
                     grandTotalPauseTime += totalPause;
                     grandTotalWorkingTime += totalWork;
+                    grandTotalPauseCount += totalPauseCount;
 
                     DateTime? firstLogin = null;
                     DateTime? lastLogout = null;
@@ -462,8 +464,8 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
 
                 TotalPausedUsers = newGroups.Count(g => string.Equals(g.Status, "Paused", StringComparison.OrdinalIgnoreCase));
                 TotalWorkingUsers = newGroups.Count(g => string.Equals(g.Status, "Working", StringComparison.OrdinalIgnoreCase));
-                TotalPauseTimeFormatted = LiveTrackingFileModel.FormatMinutes(grandTotalPauseTime);
-                TotalWorkingTimeFormatted = LiveTrackingFileModel.FormatMinutes(grandTotalWorkingTime);
+                TotalPauseCount = grandTotalPauseCount;
+                TotalAvgWorkingTimeFormatted = TotalWorkingUsers > 0 ? LiveTrackingFileModel.FormatMinutes(grandTotalWorkingTime / TotalWorkingUsers) : "0m";
 
                 if (TotalPausedUsers > 0)
                 {

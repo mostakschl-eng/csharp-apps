@@ -48,7 +48,7 @@ namespace SCHLStudio.App.Views.ExplorerV2.Services
             "AD Production",
             "AD Done",
             "Sample",
-            "Referance"
+            "Reference"
         };
 
         internal enum FilesViewMode

@@ -203,7 +203,17 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
         }
 
         private string _clientCode = string.Empty;
-        public string ClientCode { get => _clientCode; set => SetProperty(ref _clientCode, value); }
+        public string ClientCode
+        {
+            get => _clientCode;
+            set
+            {
+                if (SetProperty(ref _clientCode, value))
+                    OnPropertyChanged(nameof(ClientCodeDisplay));
+            }
+        }
+
+        public string ClientCodeDisplay => string.IsNullOrWhiteSpace(ClientCode) ? "—" : ClientCode.Trim().ToUpperInvariant();
 
         private string _categories = string.Empty;
         public string Categories
@@ -265,15 +275,16 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
             get
             {
                 if (EstimateTime <= 0 || Files == null || Files.Count == 0) return false;
-                int counted = 0;
+                int skipped = 0;
                 foreach (var f in Files)
                 {
                     var s = (f.FileStatus ?? "").Trim();
-                    if (string.Equals(s, "done", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(s, "walkout", StringComparison.OrdinalIgnoreCase))
-                        counted++;
+                    if (string.Equals(s, "walkout", StringComparison.OrdinalIgnoreCase))
+                        skipped++;
                 }
-                return counted > 0 && (ComputedTotalTimes / counted) > EstimateTime;
+                int divisor = Files.Count - skipped;
+                if (divisor <= 0) return false;
+                return (ComputedTotalTimes / divisor) > EstimateTime;
             }
         }
 
@@ -355,8 +366,16 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
         public string ShiftDisplay =>
             string.IsNullOrEmpty(Shift) ? "—" : CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Shift.ToLower());
 
-        public string WorkTypeDisplay =>
-            string.IsNullOrEmpty(WorkType) ? "—" : CultureInfo.CurrentCulture.TextInfo.ToTitleCase(WorkType.ToLower());
+        public string WorkTypeDisplay
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(WorkType)) return "—";
+                var t = WorkType.Trim();
+                if (t.Length == 1) return t.ToUpperInvariant();
+                return char.ToUpperInvariant(t[0]) + t.Substring(1).ToLowerInvariant();
+            }
+        }
 
         public string Progress
         {
@@ -372,18 +391,27 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
         }
 
         /// <summary>
-        /// Sums per-file effective times (computed for working, DB for done);
-        /// uses Math.Max with the DB-level TotalTimes as a floor.
+        /// Strictly calculates elapsed wall-clock time based on session timestamps.
+        /// If working (IsActive), End Time is Current Time. Else, End Time is UpdatedAt.
         /// </summary>
         public double ComputedTotalTimes
         {
             get
             {
-                if (Files == null || Files.Count == 0) return TotalTimes;
-                double sum = 0;
-                foreach (var f in Files)
-                    sum += f.EffectiveTimeSpent;
-                return Math.Max(sum, TotalTimes);
+                if (CreatedAt == default) return TotalTimes;
+
+                var startUtc = DateTime.SpecifyKind(CreatedAt, DateTimeKind.Utc);
+                var endUtc = DateTime.UtcNow;
+
+                if (!IsActive && UpdatedAt != default)
+                {
+                    endUtc = DateTime.SpecifyKind(UpdatedAt, DateTimeKind.Utc);
+                }
+
+                if (endUtc < startUtc) return TotalTimes;
+
+                var elapsedMinutes = (endUtc - startUtc).TotalMinutes;
+                return elapsedMinutes > 0 ? Math.Max(elapsedMinutes, TotalTimes) : TotalTimes;
             }
         }
 
@@ -395,16 +423,16 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
             get
             {
                 if (Files == null || Files.Count == 0) return "—";
-                int counted = 0;
+                int skipped = 0;
                 foreach (var f in Files)
                 {
                     var s = (f.FileStatus ?? "").Trim();
-                    if (string.Equals(s, "done", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(s, "walkout", StringComparison.OrdinalIgnoreCase))
-                        counted++;
+                    if (string.Equals(s, "walkout", StringComparison.OrdinalIgnoreCase))
+                        skipped++;
                 }
-                if (counted == 0) return "—";
-                return LiveTrackingFileModel.FormatMinutes(ComputedTotalTimes / counted);
+                int divisor = Files.Count - skipped;
+                if (divisor <= 0) return "—";
+                return LiveTrackingFileModel.FormatMinutes(ComputedTotalTimes / divisor);
             }
         }
 
@@ -620,7 +648,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Models
         public ObservableCollection<ClientEmployeeModel> Employees { get => _employees; set => SetProperty(ref _employees, value); }
 
         public string ClientNameDisplay =>
-            string.IsNullOrEmpty(ClientName) ? "—" : CultureInfo.CurrentCulture.TextInfo.ToTitleCase(ClientName.ToLower());
+            string.IsNullOrEmpty(ClientName) ? "—" : ClientName.Trim().ToUpperInvariant();
         public string EstimateTimeFormatted => LiveTrackingFileModel.FormatMinutes(EstimateTime);
         public string TotalTimeSpentFormatted => LiveTrackingFileModel.FormatMinutes(TotalTimeSpent);
         public string AvgTimeFormatted

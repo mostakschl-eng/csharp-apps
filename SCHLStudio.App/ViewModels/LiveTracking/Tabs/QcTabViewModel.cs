@@ -50,9 +50,17 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     .ToList();
 
                 ActiveUsers = qcSessions.Select(s => s.EmployeeName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().Count();
-                TotalFiles = qcSessions.SelectMany(s => s.Files).Count();
-                CompletedFiles = qcSessions.SelectMany(s => s.Files)
-                    .Count(f => string.Equals(f.FileStatus, "done", StringComparison.OrdinalIgnoreCase));
+
+                var allFiles = qcSessions.SelectMany(s => s.Files.Select(f => new
+                {
+                    Folder = (s.FolderPath ?? string.Empty).Trim().ToLowerInvariant(),
+                    File = (f.FileName ?? string.Empty).Trim().ToLowerInvariant(),
+                    Status = f.FileStatus ?? string.Empty
+                })).ToList();
+
+                TotalFiles = allFiles.Select(x => $"{x.Folder}\\{x.File}").Distinct().Count();
+                CompletedFiles = allFiles.Where(x => string.Equals(x.Status, "done", StringComparison.OrdinalIgnoreCase))
+                    .Select(x => $"{x.Folder}\\{x.File}").Distinct().Count();
 
                 var totalTime = qcSessions.Sum(s => s.ComputedTotalTimes);
                 AvgTimePerFile = TotalFiles > 0 ? LiveTrackingFileModel.FormatMinutes(totalTime / TotalFiles) : "0m";

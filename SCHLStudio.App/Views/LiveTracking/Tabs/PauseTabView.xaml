@@ -66,8 +66,8 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="TOTAL PAUSE" Style="{StaticResource LiveCardLabelStyle}" />
-                        <TextBlock Text="{Binding PauseTab.TotalPauseTimeFormatted}" Style="{StaticResource LiveCardValueStyle}" />
+                        <TextBlock Text="TOTAL PAUSE COUNT" Style="{StaticResource LiveCardLabelStyle}" />
+                        <TextBlock Text="{Binding PauseTab.TotalPauseCount}" Style="{StaticResource LiveCardValueStyle}" />
                     </StackPanel>
                     <TextBlock Grid.Column="1" Text="&#xE916;" Style="{StaticResource LiveCardIconStyle}" Foreground="#FF9500" FontSize="24" Opacity="0.7" Margin="8,0,0,0"/>
                 </Grid>
@@ -80,8 +80,8 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="TOTAL WORKING TIME" Style="{StaticResource LiveCardLabelStyle}" />
-                        <TextBlock Text="{Binding PauseTab.TotalWorkingTimeFormatted}" Style="{StaticResource LiveCardValueStyle}" />
+                        <TextBlock Text="TOTAL AVG WORKING" Style="{StaticResource LiveCardLabelStyle}" />
+                        <TextBlock Text="{Binding PauseTab.TotalAvgWorkingTimeFormatted}" Style="{StaticResource LiveCardValueStyle}" />
                     </StackPanel>
                     <TextBlock Grid.Column="1" Text="&#xE823;" Style="{StaticResource LiveCardIconStyle}" Foreground="#007AFF" FontSize="24" Opacity="0.7" Margin="8,0,0,0"/>
                 </Grid>

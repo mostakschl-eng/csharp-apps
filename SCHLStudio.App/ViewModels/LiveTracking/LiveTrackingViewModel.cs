@@ -155,6 +155,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
         public RelayCommand ClearDateRangeCommand { get; }
         public RelayCommand TodayDateRangeCommand { get; }
         public RelayCommand UseSingleDateCommand { get; }
+        public RelayCommand ReloadCommand { get; }
 
         private DateTime _selectedDate = DateTime.Today;
         public DateTime SelectedDate
@@ -401,6 +402,11 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                 _ = LoadDataAsync();
             });
 
+            ReloadCommand = new RelayCommand(_ =>
+            {
+                _ = LoadDataAsync();
+            });
+
             PendingSingleDate = SelectedDate;
             RangePickerDate = DateTime.Today;
         }
@@ -461,7 +467,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                 && saEl.ValueKind == JsonValueKind.String)
             {
                 var saStr = saEl.GetString();
-                if (!string.IsNullOrWhiteSpace(saStr)) startTime = DateTime.Parse(saStr);
+                if (!string.IsNullOrWhiteSpace(saStr)) startTime = DateTime.Parse(saStr).ToUniversalTime();
             }
 
             DateTime? endTime = null;
@@ -469,7 +475,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                 && caEl.ValueKind == JsonValueKind.String)
             {
                 var caStr = caEl.GetString();
-                if (!string.IsNullOrWhiteSpace(caStr)) endTime = DateTime.Parse(caStr);
+                if (!string.IsNullOrWhiteSpace(caStr)) endTime = DateTime.Parse(caStr).ToUniversalTime();
             }
 
             return new LiveTrackingFileModel
@@ -515,7 +521,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                     var updatedStatus = (data.TryGetProperty("fileStatus", out var fsEl) || data.TryGetProperty("file_status", out fsEl))
                         ? (fsEl.GetString() ?? "")
                         : "";
-                    var updateTime = data.TryGetProperty("timestamp", out var tsEl) ? DateTime.Parse(tsEl.GetString()!) : DateTime.Now;
+                    var updateTime = data.TryGetProperty("timestamp", out var tsEl) ? DateTime.Parse(tsEl.GetString()!).ToUniversalTime() : DateTime.UtcNow;
 
                     emp = (emp ?? string.Empty).Trim();
                     shift = (shift ?? string.Empty).Trim();
@@ -577,8 +583,8 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                                     reasons.Add(reason.Trim());
                                     var item = new PauseReasonItemModel { Reason = reason.Trim() };
                                     if (pr.TryGetProperty("duration", out var dEl)) item.Duration = dEl.GetDouble() / 60.0;
-                                    if (pr.TryGetProperty("started_at", out var sEl) && sEl.TryGetDateTime(out var sdt)) item.StartTime = sdt;
-                                    if (pr.TryGetProperty("completed_at", out var cEl) && cEl.TryGetDateTime(out var cdt)) item.EndTime = cdt;
+                                    if (pr.TryGetProperty("started_at", out var sEl) && sEl.TryGetDateTime(out var sdt)) item.StartTime = sdt.ToUniversalTime();
+                                    if (pr.TryGetProperty("completed_at", out var cEl) && cEl.TryGetDateTime(out var cdt)) item.EndTime = cdt.ToUniversalTime();
                                     details.Add(item);
                                 }
                             }
@@ -739,8 +745,8 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                             WorkType = workType,
                             ClientCode = client,
                             Categories = data.TryGetProperty("categories", out var catEl) ? catEl.GetString() ?? "" : "",
-                            CreatedAt = DateTime.Now,
-                            UpdatedAt = DateTime.Now,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
                         };
 
                         // Populate session-level aggregates (backend sends seconds)
@@ -824,7 +830,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                         if (laEl.ValueKind == JsonValueKind.String)
                         {
                             var s = laEl.GetString();
-                            if (!string.IsNullOrWhiteSpace(s)) loginAt = DateTime.Parse(s);
+                            if (!string.IsNullOrWhiteSpace(s)) loginAt = DateTime.Parse(s).ToUniversalTime();
                         }
                     }
                     if (data.TryGetProperty("logoutAt", out var loEl))
@@ -832,7 +838,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking
                         if (loEl.ValueKind == JsonValueKind.String)
                         {
                             var s = loEl.GetString();
-                            if (!string.IsNullOrWhiteSpace(s)) logoutAt = DateTime.Parse(s);
+                            if (!string.IsNullOrWhiteSpace(s)) logoutAt = DateTime.Parse(s).ToUniversalTime();
                         }
                     }
 

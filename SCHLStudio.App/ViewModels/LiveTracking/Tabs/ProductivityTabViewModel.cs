@@ -97,13 +97,20 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                 var filtered = ApplySearchFilter(sessions);
 
                 // Summary Cards (based on filtered data)
-                TotalFiles = filtered.SelectMany(s => s.Files).Count();
+                var allFiles = filtered.SelectMany(s => s.Files.Select(f => new
+                {
+                    Folder = (s.FolderPath ?? string.Empty).Trim().ToLowerInvariant(),
+                    File = (f.FileName ?? string.Empty).Trim().ToLowerInvariant(),
+                    Status = f.FileStatus ?? string.Empty
+                })).ToList();
+
+                TotalFiles = allFiles.Select(x => $"{x.Folder}\\{x.File}").Distinct().Count();
                 TotalUsers = filtered.Select(s => s.EmployeeName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().Count();
                 AvgFilesPerUser = TotalUsers > 0 ? Math.Round((double)TotalFiles / TotalUsers, 1).ToString("0.#") : "0";
 
-                var completed = filtered.SelectMany(s => s.Files)
-                    .Where(f => string.Equals(f.FileStatus, "done", StringComparison.OrdinalIgnoreCase))
-                    .Select(f => (f.FileName ?? string.Empty).ToLowerInvariant())
+                var completed = allFiles
+                    .Where(x => string.Equals(x.Status, "done", StringComparison.OrdinalIgnoreCase))
+                    .Select(x => $"{x.Folder}\\{x.File}")
                     .Distinct()
                     .Count();
                 CompletedFiles = completed;
@@ -183,8 +190,8 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                         {
                             EmployeeName = empGroup.First().Session.EmployeeName,
                             WorkType = string.Join(", ", empGroup.Select(x => x.Session.WorkType).Where(w => !string.IsNullOrWhiteSpace(w)).Distinct()),
-                            TotalFiles = empGroup.Sum(x => x.Session.Files.Count),
-                            CompletedFiles = empGroup.Sum(x => x.Session.Files.Count(f => string.Equals(f.FileStatus, "done", StringComparison.OrdinalIgnoreCase))),
+                            TotalFiles = empGroup.SelectMany(x => x.Session.Files.Select(f => $"{(x.Session.FolderPath ?? "").Trim().ToLowerInvariant()}\\{(f.FileName ?? "").Trim().ToLowerInvariant()}")).Distinct().Count(),
+                            CompletedFiles = empGroup.SelectMany(x => x.Session.Files.Where(f => string.Equals(f.FileStatus, "done", StringComparison.OrdinalIgnoreCase)).Select(f => $"{(x.Session.FolderPath ?? "").Trim().ToLowerInvariant()}\\{(f.FileName ?? "").Trim().ToLowerInvariant()}")).Distinct().Count(),
                             TotalTime = empGroup.Sum(x => x.Session.ComputedTotalTimes)
                         })
                         .OrderByDescending(e => e.TotalFiles)

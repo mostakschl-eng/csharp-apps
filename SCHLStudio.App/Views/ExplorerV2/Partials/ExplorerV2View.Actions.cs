@@ -289,6 +289,19 @@ namespace SCHLStudio.App.Views.ExplorerV2
 
                 try
                 {
+                    var activeSnapshot = GetTrackerTargetFullPaths();
+                    _workflowService.DispatchFinishTrackerSync(
+                        getWorkTimerElapsedSeconds: GetWorkTimerElapsedSeconds,
+                        getTrackerTargetFullPaths: GetSelectedFullPaths,
+                        queueDoneBatch: (files, elapsed) => TrackerQueueDoneBatch(files, elapsed, activeSnapshot));
+                }
+                catch (Exception syncEx)
+                {
+                    LogSuppressedError("ExecuteFinishWorkflowFromVmAsync_TrackerSync", syncEx);
+                }
+
+                try
+                {
                     var wt = GetCurrentWorkTypeInfo();
                     var effectiveWorkType = wt.Name;
                     try
@@ -316,19 +329,6 @@ namespace SCHLStudio.App.Views.ExplorerV2
                 catch (Exception qcEx)
                 {
                     LogSuppressedError("ExecuteFinishWorkflowFromVmAsync_QcMove", qcEx);
-                }
-
-                try
-                {
-                    var activeSnapshot = GetTrackerTargetFullPaths();
-                    _workflowService.DispatchFinishTrackerSync(
-                        getWorkTimerElapsedSeconds: GetWorkTimerElapsedSeconds,
-                        getTrackerTargetFullPaths: GetSelectedFullPaths,
-                        queueDoneBatch: (files, elapsed) => TrackerQueueDoneBatch(files, elapsed, activeSnapshot));
-                }
-                catch (Exception syncEx)
-                {
-                    LogSuppressedError("ExecuteFinishWorkflowFromVmAsync_TrackerSync", syncEx);
                 }
 
                 _workflowService.FinalizeFinishUiState(

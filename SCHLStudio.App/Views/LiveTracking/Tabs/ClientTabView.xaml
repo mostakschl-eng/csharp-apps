@@ -87,8 +87,8 @@
         <Border Grid.Row="1" Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="12,8" Margin="0,0,30,6">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="0.7*"/>
-                    <ColumnDefinition Width="2.5*"/>
+                    <ColumnDefinition Width="1.7*"/>
+                    <ColumnDefinition Width="1.5*"/>
                     <ColumnDefinition Width="1.2*"/>
                     <ColumnDefinition Width="0.8*"/>
                     <ColumnDefinition Width="0.8*"/>
@@ -125,8 +125,8 @@
                         <DataTemplate>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0.7*"/>
-                                    <ColumnDefinition Width="2.5*"/>
+                                    <ColumnDefinition Width="1.7*"/>
+                                    <ColumnDefinition Width="1.5*"/>
                                     <ColumnDefinition Width="1.2*"/>
                                     <ColumnDefinition Width="0.8*"/>
                                     <ColumnDefinition Width="0.8*"/>
@@ -164,8 +164,8 @@
                         <DataTemplate>
                             <Grid Opacity="0.7">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0.7*"/>
-                                    <ColumnDefinition Width="2.5*"/>
+                                    <ColumnDefinition Width="1.7*"/>
+                                    <ColumnDefinition Width="1.5*"/>
                                     <ColumnDefinition Width="1.2*"/>
                                     <ColumnDefinition Width="0.8*"/>
                                     <ColumnDefinition Width="0.8*"/>

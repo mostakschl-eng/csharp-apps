@@ -243,7 +243,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     {
                         Reason = "All",
                         PauseReasons = pauseReasons,
-                        ClientCode = wl.ClientCode ?? "—",
+                        ClientCode = wl.ClientCodeDisplay ?? "—",
                         WorkType = wl.WorkTypeDisplay ?? "—",
                         StartTime = wl.CreatedAt,
                         EndTime = wl.UpdatedAt != default ? (DateTime?)wl.UpdatedAt : null,
@@ -261,7 +261,7 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                     {
                         foreach (var item in wl.PauseReasonDetails)
                         {
-                            item.ClientCode = wl.ClientCode ?? "—";
+                            item.ClientCode = wl.ClientCodeDisplay ?? "—";
                             item.WorkType = wl.WorkTypeDisplay ?? "—";
                             item.PauseCount = wl.PauseCount;
                             detail.Items.Add(item);
@@ -402,8 +402,11 @@ namespace SCHLStudio.App.ViewModels.LiveTracking.Tabs
                 var totalWork = logs.Sum(l => l.ComputedTotalTimes);
                 var totalPause = logs.Sum(l => l.PauseTime);
                 var completedFiles = logs
-                    .SelectMany(l => l.Files)
-                    .Count(f => f != null && string.Equals(f.FileStatus, "done", StringComparison.OrdinalIgnoreCase));
+                    .SelectMany(l => l.Files
+                        .Where(f => f != null && string.Equals(f.FileStatus, "done", StringComparison.OrdinalIgnoreCase))
+                        .Select(f => $"{(l.FolderPath ?? string.Empty).Trim().ToLowerInvariant()}\\{(f.FileName ?? string.Empty).Trim().ToLowerInvariant()}"))
+                    .Distinct()
+                    .Count();
 
                 double idleMinutes = 0;
                 DateTime? firstLogin = null;

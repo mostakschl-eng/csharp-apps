@@ -58,6 +58,43 @@ namespace SCHLStudio.App.Views.ExplorerV2.Services
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
+                var finalPaths = new List<string>();
+                foreach (var p in paths)
+                {
+                    try
+                    {
+                        var dir = Path.GetDirectoryName(p);
+                        var baseName = Path.GetFileNameWithoutExtension(p);
+                        if (!string.IsNullOrWhiteSpace(dir) && !string.IsNullOrWhiteSpace(baseName) && Directory.Exists(dir))
+                        {
+                            var pattern = baseName + ".*";
+                            var newest = Directory.EnumerateFiles(dir, pattern, SearchOption.TopDirectoryOnly)
+                                .Where(File.Exists)
+                                .OrderByDescending(File.GetLastWriteTimeUtc)
+                                .FirstOrDefault();
+
+                            if (!string.IsNullOrWhiteSpace(newest))
+                            {
+                                finalPaths.Add(newest);
+                            }
+                            else
+                            {
+                                finalPaths.Add(p);
+                            }
+                        }
+                        else
+                        {
+                            finalPaths.Add(p);
+                        }
+                    }
+                    catch
+                    {
+                        finalPaths.Add(p);
+                    }
+                }
+
+                paths = finalPaths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
                 if (paths.Count == 0)
                 {
                     return;
